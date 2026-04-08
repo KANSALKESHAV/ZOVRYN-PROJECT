@@ -200,7 +200,7 @@ adminRouter.post("/signin" , async (req,res)=>{
 
 adminRouter.use(adminAuthMiddleware);
 
-adminRouter,get("/me" , async (req,res)=>{
+adminRouter.get("/me" , async (req,res)=>{
 
     let authAdmin = req.authAdmin;
     try {

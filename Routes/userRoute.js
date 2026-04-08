@@ -188,7 +188,7 @@ userRouter.post("/signin" , async (req,res)=>{
 
 userRouter.use(userAuthMiddleware);
 
-userRouter,get("/me" , async (req,res)=>{
+userRouter.get("/me" , async (req,res)=>{
 
     let authUser = req.authUser;
     try {
@@ -314,3 +314,6 @@ userRouter.get("/getSingleList" , async (req,res)=>{
 
 });
 
+module.exports = {
+    userRouter
+};

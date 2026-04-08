@@ -2,17 +2,19 @@
 
 const express = require("express");
 const mongoose = require("mongoose");
-const cookieParser = requiw
+const cookieParser = require("cookie-parser")
 const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
 
 const {mongooseUrl , port} = require("./Configrations/config.js");
 const {rootRouter} = require("./Routes/rootRoute.js");
 
 const app = express();
 app.use(express.json());
-// app.use(cookieParser());
-// app.use(helmet());
-// app.use(cors());
+app.use(cookieParser());
+app.use(helmet());
+app.use(cors());
 
 
 app.use("/" , rootRouter);

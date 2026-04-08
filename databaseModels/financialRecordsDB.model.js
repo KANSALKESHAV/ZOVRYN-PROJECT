@@ -47,7 +47,7 @@ const financialRecordSchema = new schema({
     },
 
     date : {
-        type : date,
+        type : Date,
         required : true,
         default : Date.now
     },
