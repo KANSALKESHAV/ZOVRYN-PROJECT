@@ -1,6 +1,6 @@
 // FINANCE RECORD VALIDATOR 
 
-const {z, date} = require("zod");
+const {z} = require("zod");
 
 const {financial_record_categories , financial_record_type} = require("../databaseModels/financialRecordsDB.model.js")
 

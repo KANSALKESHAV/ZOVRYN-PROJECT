@@ -23,7 +23,7 @@ const financial_record_categories = [
         "entertainment",
         "marketing",
         "operations",
-        "other_expense",
+        "other_expense"
     ];
 
 const financialRecordSchema = new schema({
@@ -49,7 +49,7 @@ const financialRecordSchema = new schema({
     date : {
         type : Date,
         required : true,
-        default : Date.now
+        default : Date.now()
     },
 
     description : {

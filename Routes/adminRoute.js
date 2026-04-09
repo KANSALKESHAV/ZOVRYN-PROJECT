@@ -39,7 +39,7 @@ adminRouter.post("/signup" , async (req,res)=>{
 
     if(!verifiedData.success){
 
-        res.status(411).json({
+        res.status(400).json({
             MESSAGE : "INVALID CERDENTIALS",
             ERROR : verifiedData.error
         });
@@ -128,7 +128,7 @@ adminRouter.post("/signin" , async (req,res)=>{
     let signinVerifiedData = validateSignIn({email,password});
     if (!signinVerifiedData.success){
 
-        res.status(411).json({
+        res.status(400).json({
             MESSAGE : "INVALID CERDENTIALS",
             ERROR : signinVerifiedData.error
         });
@@ -279,7 +279,7 @@ adminRouter.post("/addUser" , async (req,res)=>{
     let verifiedData = validateUser(req.body);
     if(!verifiedData.success){
 
-        res.status(411).json({
+        res.status(400).json({
             MESSAGE : "INVALID CERDENTIALS",
             ERROR : verifiedData.error
         });
@@ -429,62 +429,6 @@ adminRouter.get("/userList" , async (req,res)=>{
 
 });
 
-// adminRouter.get("/attendanceList" , async (req,res)=>{
-
-//     const companyRefId = req.authAdmin.companyRefId;
-//     try {
-        
-//         const attendanceList = await attendanceModel.find({companyRefId})
-//             .populate("empRefId" , "email firstName lastName isDeleted")
-//             .populate("adminRefId" , "email firstName lastName isDeleted")
-//             .populate("companyRefId" , "companyName" );
-
-//         const modifiedList = attendanceList.map(record =>{
-//             let emp = record.empRefId;
-//             let admin = record.adminRefId;
-
-//             if((!emp && !admin)||(emp && emp.isDeleted)||(admin && admin.isDeleted)){
-                
-//                 return {
-//                     time : record.time.toTimeString().split(" ")[0],
-//                     date : record.date.toISOString().split("T")[0],
-//                     type : record.type,
-//                     user : "USER DOESNOT EXIST IN DATABASE ANYMORE"
-//                 };
-                
-//             }
-
-//             let isEmployee = !!emp;
-//             let user = isEmployee ? emp : admin ;
-
-//             return {
-//                 time : record.time.toTimeString().split(" ")[0],
-//                 date : record.date.toISOString().split("T")[0],
-//                 type : record.type,
-//                 userType : isEmployee ? "EMPLOYEE" : "ADMIN",
-//                 userID : user._id,
-//                 email : user.email ,
-//                 firstName : user.firstName ,
-//                 lastName : user.lastName
-//             };
-
-//         });
-
-//         res.status(200).json(modifiedList);
-//         return;
-        
-//     } catch (error) {
-
-//         console.log(error);
-//         res.status(500).json({
-//             MESSAGE : "SOME ERROR OCCURED WHILE FETCHING EMPLOYEE DATA FROM DB",
-//             ERROR : error
-//         });
-//         return;
-        
-//     }
-// });
-
 adminRouter.put("/updateUSer" , (req,res)=>{
 
 });
@@ -544,9 +488,9 @@ adminRouter.post("/createRecord" , async (req,res)=>{
 
     if(!verifiedFinancialRecords.success){
 
-        res.status(411).json({
+        res.status(400).json({
             MESSAGE : "INVALID CERDENTIALS FOR CREATING FINANCIAL RECORD",
-            ERROR : verifiedData.error
+            ERROR : verifiedFinancialRecords.error
         });
         return;
 
@@ -554,13 +498,14 @@ adminRouter.post("/createRecord" , async (req,res)=>{
 
     try {
 
+        verifiedData = verifiedFinancialRecords.data;
         const financeRecord = await financialRecordModel.create({
-            amount : verifiedFinancialRecords.amount,
-            financial_record_type : verifiedFinancialRecords.type,
-            financial_record_categories : verifiedFinancialRecords.category,
-            date : verifiedFinancialRecords.date ? verifiedFinancialRecords.date : Date.now,
-            description : verifiedFinancialRecords.description,
-            createdBy : authAdmin._id,
+            amount : verifiedData.amount,
+            financial_record_type : verifiedData.type,
+            financial_record_categories : verifiedData.category,
+            date : verifiedData.date ? verifiedData.date : Date.now(),
+            description : verifiedData.description ? verifiedData.description : null,
+            createdBy : req.authAdmin._id,
             createdByModel : "ADMIN"
         });
 
@@ -583,11 +528,11 @@ adminRouter.post("/createRecord" , async (req,res)=>{
 
 adminRouter.delete("/deleteFinancialRecord" , async (req,res)=>{
 
-    const {Record_id} = req.body;
+    const {id} = req.body;
 
     try {
 
-        if (!mongoose.isValidObjectId(Record_id)){
+        if (!mongoose.isValidObjectId(id)){
 
             res.status(400).json({
                 MESSAGE : "INVALID FINANCIAL RECORD ID TO DELETE RECORD"
@@ -596,7 +541,7 @@ adminRouter.delete("/deleteFinancialRecord" , async (req,res)=>{
 
         };
 
-        let financeRecord = await financialRecordModel.findById(Record_id).select("isDeleted");
+        let financeRecord = await financialRecordModel.findById(id).select("isDeleted");
 
         if(!financeRecord || financeRecord.isDeleted){
             res.status(404).json({
@@ -628,49 +573,9 @@ adminRouter.delete("/deleteFinancialRecord" , async (req,res)=>{
 
 });
 
-adminRouter.get("/getRecordList" , async (req,res)=>{
-    
-    try {
-        
-        let newList = getRecordList();
+adminRouter.get("/getRecordList" , getRecordList);
 
-        res.status(200).json(newList);
-        return;
-        
-    } catch (error) {
-
-        console.log(error);
-        res.status(500).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE FETCHING RECORD LIST DATA FROM DB",
-            ERROR : error
-        });
-        return;
-        
-    }
-
-});
-
-adminRouter.get("/getSingleList" , async (req,res)=>{
-    
-    try {
-        
-        let newList = getSingleRecord(req.body.id);
-
-        res.status(200).json(newList);
-        return;
-        
-    } catch (error) {
-
-        console.log(error);
-        res.status(500).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE FETCHING RECORD DATA FROM DB",
-            ERROR : error
-        });
-        return;
-        
-    }
-
-});
+adminRouter.get("/getSingle" , getSingleRecord);
 
 // ALL THE FUNCTIONS OF DASHBOARD ARE CALLED HERE INSIDE SPECIFIC ROUTES
 // ALL THE DASHBOARD ROUTERS WILL BE ACCESSED ONLY BY AUTHORISED ADMINS
