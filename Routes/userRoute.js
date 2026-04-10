@@ -23,65 +23,72 @@ const cookieOptions = {
 
 userRouter.post("/signup" , async (req,res)=>{
 
-    let verifiedData = validateUser(req.body);
-
-    if(!verifiedData.success){
-
-        res.status(411).json({
-            MESSAGE : "INVALID CERDENTIALS",
-            ERROR : verifiedData.error
-        });
-        return;
-
-    }
-
-    let existingAdmin , existingUser;
     try {
-        existingAdmin = await adminModel.findOne(
-            { email : req.body.email }
-        ).select("email")
 
-        existingUser = await userModel.findOne(
-            { email : req.body.email }
-        ).select("email")
+        let verifiedData = validateUser(req.body);
 
-    } catch (error) {
+        if(!verifiedData.success){
 
-        console.log(`SOME ERROR OCCURED WHILE SIGNING UP NEW USER\N${error}`);
-        res.status(500).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE SIGNING UP NEW USER"
-        });
-        return;
+            res.status(411).json({
+                MESSAGE : "INVALID CERDENTIALS",
+                ERROR : verifiedData.error
+            });
+            return;
 
-    };
-    if(existingAdmin){
+        }
 
-        res.status(409).json({
-            MESSAGE : "AN ADMIN ALREADY EXISTS WITH THE PROVIDED EMAIL"
-        });
-        return;
+        if (req.body.role.toLowerCase() == "admin"){
+            res.status(400).json({
+                MESSAGE : "UNAUTHORISED ACCESS || CAN ONLY REGISTER VIEWER OR ANALYST THROUGH THIS ENDPOINT"
+            })
+            return;
+        };
 
-    };
-    if(existingUser){
+        let existingAdmin , existingUser;
+        try {
+            existingAdmin = await adminModel.findOne(
+                { email : req.body.email }
+            ).select("email")
 
-        res.status(409).json({
-            MESSAGE : "AN USER ALREADY EXISTS WITH THE PROVIDED EMAIL"
-        });
-        return;
+            existingUser = await userModel.findOne(
+                { email : req.body.email }
+            ).select("email")
 
-    };
+        } catch (error) {
 
-    let hashedPW = createHash(req.body.password);
-    if(!hashedPW){
+            console.log(`SOME ERROR OCCURED WHILE SIGNING UP NEW USER\N${error}`);
+            res.status(500).json({
+                MESSAGE : "SOME ERROR OCCURED WHILE SIGNING UP NEW USER"
+            });
+            return;
 
-        res.status(400).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE HASHING PASSWORD"
-        });
-        return;
+        };
+        if(existingAdmin){
 
-    }
+            res.status(409).json({
+                MESSAGE : "AN ADMIN ALREADY EXISTS WITH THE PROVIDED EMAIL"
+            });
+            return;
 
-    try {
+        };
+        if(existingUser){
+
+            res.status(409).json({
+                MESSAGE : "AN USER ALREADY EXISTS WITH THE PROVIDED EMAIL"
+            });
+            return;
+
+        };
+
+        let hashedPW = createHash(req.body.password);
+        if(!hashedPW){
+
+            res.status(400).json({
+                MESSAGE : "SOME ERROR OCCURED WHILE HASHING PASSWORD"
+            });
+            return;
+
+        }
 
         const user = await userModel.create({
             email : req.body.email,
@@ -270,49 +277,9 @@ userRouter.post("/logout" , async (req,res)=>{
 
 userRouter.use(RbacAnalystOrAdminOnly);
 
-userRouter.get("/getRecordList" , async (req,res)=>{
-    
-    try {
-        
-        let newList = getRecordList();
+userRouter.get("/getRecordList" , getRecordList);
 
-        res.status(200).json(newList);
-        return;
-        
-    } catch (error) {
-
-        console.log(error);
-        res.status(500).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE FETCHING RECORD LIST DATA FROM DB",
-            ERROR : error
-        });
-        return;
-        
-    }
-
-});
-
-userRouter.get("/getSingleList" , async (req,res)=>{
-    
-    try {
-        
-        let newList = getSingleRecord(req.body.id);
-
-        res.status(200).json(newList);
-        return;
-        
-    } catch (error) {
-
-        console.log(error);
-        res.status(500).json({
-            MESSAGE : "SOME ERROR OCCURED WHILE FETCHING RECORD DATA FROM DB",
-            ERROR : error
-        });
-        return;
-        
-    }
-
-});
+userRouter.get("/getSingle" , getSingleRecord);
 
 module.exports = {
     userRouter

@@ -12,7 +12,7 @@ const cookieOptions = {
 
 async function userAuthMiddleware(req , res , next){
 
-    let incomingAccessToken = req.cookies.accessToken;
+    let incomingAccessToken = req.cookies.userAccessToken;
     if(!incomingAccessToken){
 
         res.status(403).json({
@@ -22,9 +22,23 @@ async function userAuthMiddleware(req , res , next){
 
     }
 
+    let verifiedData ;
     try {
 
-        let verifiedData = jwt.verify(incomingAccessToken , ACCESS_JWT_SECRET);
+        verifiedData = jwt.verify(incomingAccessToken , ACCESS_JWT_SECRET);
+        
+    } catch (error) {
+
+        res.status(401).json({
+            MESSAGE : "INVALID USER ACCESS TOKEN",
+            ERROR : error.message
+        });
+        return;
+        
+    }
+
+    try {
+
         if(verifiedData.id){
 
             let user = await userModel.findById(verifiedData.id).select("-password -refreshToken");
@@ -41,10 +55,10 @@ async function userAuthMiddleware(req , res , next){
 
     } catch (error) {
 
-        console.log(`ERROR IN USERAUTHMW \n${error}`);
+        console.log(`DB ERROR IN USERAUTHMW \n${error}`);
         res.status(401).json({
-            MESSAGE : "INVALID USER ACCESS TOKEN",
-            ERROR : error
+            MESSAGE : "DB ERROR IN USERAUTHMW",
+            ERROR : error.message
         });
         return;
     }
@@ -53,14 +67,14 @@ async function userAuthMiddleware(req , res , next){
 
 async function refreshUserAccessToken() {
 
-    const incomingRefreshToken = req.cookies.refreshToken;
+    const incomingRefreshToken = req.cookies.userRefreshToken;
     if(!incomingRefreshToken){
 
         res.status(403).json({
             MESSAGE : "UNATHORIZED USER ACCESS || SESSION TOKEN DOESNOT EXISTS"
         })
-        .clearCookie("accessToken" , cookieOptions)
-        .clearCookie("refreshToken" , cookieOptions);
+        .clearCookie("userAccessToken" , cookieOptions)
+        .clearCookie("userRefreshToken" , cookieOptions);
         return;
 
     }
@@ -80,7 +94,7 @@ async function refreshUserAccessToken() {
 
             }
 
-            if(incomingRefreshToken !== user.refreshToken){
+            if(incomingRefreshToken !== user.userRefreshToken){
 
                 res.status(401).json({
                     MESSAGE : "REFRESH TOKEN IS USED OR EXPIRED OR INVALID "
@@ -95,14 +109,14 @@ async function refreshUserAccessToken() {
             const remainingRTLife = jwt.decode(incomingRefreshToken).exp*1000 - Date.now();
             if(remainingRTLife < 15*60*1000){
                 newRefreshToken = generateRefreshToken(user._id);
-                user.refreshToken = newRefreshToken;
+                user.userRefreshToken = newRefreshToken;
                 await user.save();
             }
 
             return res
                 .status(200)
-                .cookie("accessToken" , newAccessToken , cookieOptions)
-                .cookie("refreshToken" , newRefreshToken , cookieOptions)
+                .cookie("userAccessToken" , newAccessToken , cookieOptions)
+                .cookie("userRefreshToken" , newRefreshToken , cookieOptions)
                 .json({
                     MESSAGE : "ACCESS TOKEN REFRESHED",
                     newAccessToken,
@@ -118,8 +132,8 @@ async function refreshUserAccessToken() {
             MESSAGE : "SOME PROBLEM OCCURED IN REFRESHING TOKEN FOR USER",
             ERROR : Error
         })
-        .clearCookie("accessToken" , cookieOptions)
-        .clearCookie("refreshToken" , cookieOptions);
+        .clearCookie("userAccessToken" , cookieOptions)
+        .clearCookie("userRefreshToken" , cookieOptions);
         return;
     }
 

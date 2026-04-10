@@ -6,9 +6,9 @@
 async function RbacAnalystOrAdminOnly (req , res , next){
 
     let rbacAccessVar = false;
-    let accessedUser;
+    let accessedUser = null;
 
-    if(!req.authUser || !req.authAdmin){
+    if(!req.authUser && !req.authAdmin){
 
         res.status(401).json({
             MESSAGE : "AUTHENTICATION REQUIRED"
@@ -17,21 +17,16 @@ async function RbacAnalystOrAdminOnly (req , res , next){
 
     };
 
-    if(req.authUser){
+    if(req.authUser && req.authUser.role == "ANALYST"){
 
-        if (authUser.role == "ANALYST"){
-            accessedUser = authUser;
-            rbacAccessVar = true;
-        }
-        if (authUser.role == "VIEWER"){
-            rbacAccessVar = false;
-        }
+        accessedUser = req.authUser;
+        rbacAccessVar = true;
 
     }
 
-    if (req.authAdmin){
+    if (!accessedUser && req.authAdmin){
 
-        accessedUser = authAdmin;
+        accessedUser = req.authAdmin;
         rbacAccessVar = true;
     }
 
